@@ -775,6 +775,7 @@ struct _CRC_ctx {
 	poly64x2_t K12;
 	poly64x2_t KBP;
 };
+
 static const struct _CRC_ctx CRC64XZ_ctx = {
 .KBP = {0x9C3E466C172963D5ULL, 0x92D8AF2BAF0E1E85ULL},
 .K12 = {0xE05DD497CA393AE4ULL, 0xDABE95AFC7875F40ULL},// x^{191}, x^{127}
@@ -795,10 +796,29 @@ static const struct _CRC_ctx CRC64XZ_ctx = {
 [14] = {0x6184D55F721267C6ULL, 0x0000000000010000ULL},// x^{111}, x^{47}
 [15] = {0x22EF0D5934F964ECULL, 0x0000000000000100ULL},// x^{119}, x^{55}
 [ 0] = {0xDABE95AFC7875F40ULL, 0x0000000000000001ULL},// x^{127}, x^{63}
-},
-};
-
+}};
 static const struct _CRC_ctx CRC32B_ctx= {
+.KBP = {0x4869EC38DEA713F1, 0x105EC76F1},
+.K12 = {0xF20C0DFE, 0x493C7D27},
+.K34 = {
+[ 1] = {0xBF818109, 0xF838CD50},// x^{-25}, x^{-89}
+[ 2] = {0x780D5A4D, 0x51DDE21E},// x^{-17}, x^{-81}
+[ 3] = {0xFE2B5C35, 0xBC77A5AA},// x^{-9}, x^{-73}
+[ 4] = {0x05EC76F1, 0xC915EA3B},// x^{-1}, x^{-65}
+[ 5] = {0x01000000, 0xA9A3F760},// x^{7}, x^{-57}
+[ 6] = {0x00010000, 0x616F3095},// x^{15}, x^{-49}
+[ 7] = {0x00000100, 0xA738873B},// x^{23}, x^{-41}
+[ 8] = {0x00000001, 0xA9CDDA0D},// x^{31}, x^{-33}
+[ 9] = {0xF26B8303, 0xBF818109},// x^{39}, x^{-25}
+[10] = {0x13A29877, 0x780D5A4D},// x^{47}, x^{-17}
+[11] = {0xA541927E, 0xFE2B5C35},// x^{55}, x^{-9}
+[12] = {0xDD45AAB8, 0x05EC76F1},// x^{63}, x^{-1}
+[13] = {0x38116FAC, 0x01000000},// x^{71}, x^{7}
+[14] = {0xEF306B19, 0x00010000},// x^{79}, x^{15}
+[15] = {0x68032CC8, 0x00000100},// x^{87}, x^{23}
+[ 0] = {0x493C7D27, 0x00000001},// x^{95}, x^{31}
+}};
+static const struct _CRC_ctx CRC32C_ctx= {
 .KBP = {0x4869EC38DEA713F1, 0x105EC76F1},
 .K12 = {0xF20C0DFE, 0x493C7D27},
 .K34 = {
@@ -863,12 +883,11 @@ static const struct _CRC_ctx CRC16M_ctx= {
 [15] = {0xC010, 0x0100},// x^{71}, x^{7}
 [ 0] = {0xCCC1, 0x0001},// x^{79}, x^{15}
 }};
-
 static const struct _CRC_ctx CRC16B_ctx= {
 .KBP = {0x859B040B1C581911ULL, 0x10811ULL},
-.K12 = {0x8E10, 0x81BF},// x^{143}, x^{79}
+.K12 = {0x8E10, 0x81BF},// x^{143}, x^{79} 128+16-1  64+(16-1)
 .K34 = {
-[ 1] = {0x4EA8, 0x97B7},// x^{-41}, x^{-105}
+[ 1] = {0x4EA8, 0x97B7},// x^{-41}, x^{-105} i*8+64+(-128+16-1), -120+16-1
 [ 2] = {0x290C, 0xC1A3},// x^{-33}, x^{-97}
 [ 3] = {0xCA45, 0x9750},// x^{-25}, x^{-89}
 [ 4] = {0x1563, 0x5212},// x^{-17}, x^{-81}
@@ -883,40 +902,128 @@ static const struct _CRC_ctx CRC16B_ctx= {
 [13] = {0x0B44, 0x5188},// x^{55}, x^{-9}
 [14] = {0x042B, 0x0811},// x^{63}, x^{-1}
 [15] = {0x9FD5, 0x0100},// x^{71}, x^{ 7}
-[ 0] = {0x81BF, 0x0001},// x^{79}, x^{15}
+[ 0] = {0x81BF, 0x0001},// x^{79}, x^{15} 64+16-1  16-1
 }};
-
 static const struct _CRC_ctx CRC8B_ctx= {
 .KBP = 	   {0x808182878899AAFFULL, 0x103ULL},
 .K12 =     {0xC1, 0x81},// x^{135}, x^{71}
 .K34 = {
-	[ 1] = {0xFF, 0xFD},// x^{-49}, x^{-113}
-	[ 2] = {0x55, 0xAA},// x^{-41}, x^{-105}
-	[ 3] = {0x33, 0x66},// x^{-33}, x^{-97}
-	[ 4] = {0x11, 0x22},// x^{-25}, x^{-89}
-	[ 5] = {0x0F, 0x1E},// x^{-17}, x^{-81}
-	[ 6] = {0x05, 0x0A},// x^{-9}, x^{-73}
-	[ 7] = {0x03, 0x06},// x^{-1}, x^{-65}
-	[ 8] = {0x01, 0x02},// x^{7}, x^{-57}
-	[ 9] = {0xFE, 0xFF},// x^{15}, x^{-49}
-	[10] = {0xAB, 0x55},// x^{23}, x^{-41}
-	[11] = {0x98, 0x33},// x^{31}, x^{-33}
-	[12] = {0x89, 0x11},// x^{39}, x^{-25}
-	[13] = {0x86, 0x0F},// x^{47}, x^{-17}
-	[14] = {0x83, 0x05},// x^{55}, x^{-9}
-	[15] = {0x80, 0x03},// x^{63}, x^{-1}
-	[ 0] = {0x81, 0x01},// x^{71}, x^{7}
-	},
-};
+[ 1] = {0xFF, 0xFD},// x^{-49}, x^{-113}
+[ 2] = {0x55, 0xAA},// x^{-41}, x^{-105}
+[ 3] = {0x33, 0x66},// x^{-33}, x^{-97}
+[ 4] = {0x11, 0x22},// x^{-25}, x^{-89}
+[ 5] = {0x0F, 0x1E},// x^{-17}, x^{-81}
+[ 6] = {0x05, 0x0A},// x^{-9}, x^{-73}
+[ 7] = {0x03, 0x06},// x^{-1}, x^{-65}
+[ 8] = {0x01, 0x02},// x^{7}, x^{-57}
+[ 9] = {0xFE, 0xFF},// x^{15}, x^{-49}
+[10] = {0xAB, 0x55},// x^{23}, x^{-41}
+[11] = {0x98, 0x33},// x^{31}, x^{-33}
+[12] = {0x89, 0x11},// x^{39}, x^{-25}
+[13] = {0x86, 0x0F},// x^{47}, x^{-17}
+[14] = {0x83, 0x05},// x^{55}, x^{-9}
+[15] = {0x80, 0x03},// x^{63}, x^{-1}
+[ 0] = {0x81, 0x01},// x^{71}, x^{7}
+}};
+static const struct _CRC_ctx CRC32_ctx= {
+.KBP = {0x04D101DF481B4E5A, 0x04C11DB700000000},
+.K12 = {0xE8A45605, 0xC5B9CD4C},// x^{128}, x^{192}
+.K34 = {
+[ 1] = {0x052B9A0400000000, 0x876D81F800000000},// x^{-88}, x^{-24}
+[ 2] = {0x3C5F6F6B00000000, 0x1ACA48EB00000000},// x^{-80}, x^{-16}
+[ 3] = {0xBE519DF400000000, 0xA9D3E6A600000000},// x^{-72}, x^{-8}
+[ 4] = {0xD02DD97400000000, 0x0000000100000000},// x^{-64}, x^{ 0}
+[ 5] = {0x3C423FE900000000, 0x0000010000000000},// x^{-56}, x^{ 8}
+[ 6] = {0xA3011FF400000000, 0x0001000000000000},// x^{-48}, x^{16}
+[ 7] = {0xFD7384D700000000, 0x0100000000000000},// x^{-40}, x^{24}
+[ 8] = {0xCBF1ACDA00000000, 0x04C11DB700000000},// x^{-32}, x^{32}
+[ 9] = {0x876D81F800000000, 0xD219C1DC00000000},// x^{-24}, x^{40}
+[10] = {0x1ACA48EB00000000, 0x01D8AC8700000000},// x^{-16}, x^{48}
+[11] = {0xA9D3E6A600000000, 0xDC6D9AB700000000},// x^{-8}, x^{56}
+[12] = {0x0000000100000000, 0x490D678D00000000},// x^{ 0}, x^{64}
+[13] = {0x0000010000000000, 0x1B280D7800000000},// x^{ 8}, x^{72}
+[14] = {0x0001000000000000, 0x4F57681100000000},// x^{16}, x^{80}
+[15] = {0x0100000000000000, 0x5BA1DCCA00000000},// x^{24}, x^{88}
+[ 0] = {0x04C11DB700000000, 0xF200AA6600000000},// x^{32}, x^{96}
+}};
+static const struct _CRC_ctx CRC24_ctx= {
+.KBP = {0xF845FE2493242DA4, 0x864CFB0000000000},
+.K12 = {0x6243DA, 0xB22B31},// x^{128}, x^{192}
+.K34 = {
+[ 1] = {0x2471670000000000, 0x7190920000000000},// x^{-96}, x^{-32}
+[ 2] = {0xEE50080000000000, 0xC6E2490000000000},// x^{-88}, x^{-24}
+[ 3] = {0xCE8F4A0000000000, 0xD19E9A0000000000},// x^{-80}, x^{-16}
+[ 4] = {0x1D1CA30000000000, 0xF77C040000000000},// x^{-72}, x^{-8}
+[ 5] = {0x6DC6AA0000000000, 0x0000010000000000},// x^{-64}, x^{ 0}
+[ 6] = {0x67F3180000000000, 0x0001000000000000},// x^{-56}, x^{ 8}
+[ 7] = {0x79152C0000000000, 0x0100000000000000},// x^{-48}, x^{16}
+[ 8] = {0xE2DD700000000000, 0x864CFB0000000000},// x^{-40}, x^{24}
+[ 9] = {0x7190920000000000, 0x668F480000000000},// x^{-32}, x^{32}
+[10] = {0xC6E2490000000000, 0x8309D70000000000},// x^{-24}, x^{40}
+[11] = {0xD19E9A0000000000, 0x3609520000000000},// x^{-16}, x^{48}
+[12] = {0xF77C040000000000, 0xD9FE8C0000000000},// x^{-8}, x^{56}
+[13] = {0x0000010000000000, 0x36EB3D0000000000},// x^{ 0}, x^{64}
+[14] = {0x0001000000000000, 0x3B918C0000000000},// x^{ 8}, x^{72}
+[15] = {0x0100000000000000, 0xF50BAF0000000000},// x^{16}, x^{80}
+[ 0] = {0x864CFB0000000000, 0xFD7E0C0000000000},// x^{24}, x^{88}
+}};
+static const struct _CRC_ctx CRC16_ctx= {
+.KBP = {0x11303471A041B343, 0x1021000000000000},
+.K12 = {0xAEFC, 0x650B},// x^{128}, x^{192}
+.K34 = {
+[ 1] = {0xCBF3000000000000, 0x2AE4000000000000},// x^{-104}, x^{-40}
+[ 2] = {0x9B27000000000000, 0x6128000000000000},// x^{-96}, x^{-32}
+[ 3] = {0x15D2000000000000, 0x5487000000000000},// x^{-88}, x^{-24}
+[ 4] = {0x9094000000000000, 0x9D71000000000000},// x^{-80}, x^{-16}
+[ 5] = {0x17B9000000000000, 0x2314000000000000},// x^{-72}, x^{-8}
+[ 6] = {0xDBD6000000000000, 0x0001000000000000},// x^{-64}, x^{ 0}
+[ 7] = {0xAC16000000000000, 0x0100000000000000},// x^{-56}, x^{ 8}
+[ 8] = {0x6266000000000000, 0x1021000000000000},// x^{-48}, x^{16}
+[ 9] = {0x2AE4000000000000, 0x3331000000000000},// x^{-40}, x^{24}
+[10] = {0x6128000000000000, 0x3730000000000000},// x^{-32}, x^{32}
+[11] = {0x5487000000000000, 0x76B4000000000000},// x^{-24}, x^{40}
+[12] = {0x9D71000000000000, 0xAA51000000000000},// x^{-16}, x^{48}
+[13] = {0x2314000000000000, 0x45A0000000000000},// x^{-8}, x^{56}
+[14] = {0x0001000000000000, 0xB861000000000000},// x^{ 0}, x^{64}
+[15] = {0x0100000000000000, 0x47D3000000000000},// x^{ 8}, x^{72}
+[ 0] = {0x1021000000000000, 0xEB23000000000000},// x^{16}, x^{80}
+}};
+/* CRC-8
+    width=8 poly=0x07 init=0x00 refin=false refout=false xorout=0x00 check=0xf4 name="CRC-8" 
+    The System Management Interface Forum, Inc. (3 August 2000), System Management Bus (SMBus) Specification, version 2.0
+ */
 
+static const struct _CRC_ctx CRC8_ctx= {
+.KBP = {0x07156A166329DD13, 0x0700000000000000},
+.K12 = {0x02, 0x26},// x^{128}, x^{192}
+.K34 = {
+[ 1] = {0x8900000000000000, 0x3400000000000000},// x^{-112}, x^{-48}
+[ 2] = {0xB600000000000000, 0x8C00000000000000},// x^{-104}, x^{-40}
+[ 3] = {0x0B00000000000000, 0xAD00000000000000},// x^{-96}, x^{-32}
+[ 4] = {0x3100000000000000, 0x4A00000000000000},// x^{-88}, x^{-24}
+[ 5] = {0x9700000000000000, 0xF100000000000000},// x^{-80}, x^{-16}
+[ 6] = {0xEC00000000000000, 0xD900000000000000},// x^{-72}, x^{-8}
+[ 7] = {0x8A00000000000000, 0x0100000000000000},// x^{-64}, x^{ 0}
+[ 8] = {0xBF00000000000000, 0x0700000000000000},// x^{-56}, x^{ 8}
+[ 9] = {0x3400000000000000, 0x1500000000000000},// x^{-48}, x^{16}
+[10] = {0x8C00000000000000, 0x6B00000000000000},// x^{-40}, x^{24}
+[11] = {0xAD00000000000000, 0x1600000000000000},// x^{-32}, x^{32}
+[12] = {0x4A00000000000000, 0x6200000000000000},// x^{-24}, x^{40}
+[13] = {0xF100000000000000, 0x2900000000000000},// x^{-16}, x^{48}
+[14] = {0xD900000000000000, 0xDF00000000000000},// x^{-8}, x^{56}
+[15] = {0x0100000000000000, 0x1300000000000000},// x^{ 0}, x^{64}
+[ 0] = {0x0700000000000000, 0x7900000000000000},// x^{ 8}, x^{72}
+}};
 uint64_t 	CRC64B_update_N(const struct _CRC_ctx * ctx,  uint64_t crc, uint8_t *data, int len){
 	poly64x2_t c = {crc};
 	int blocks = (len+15) >> 4;
+__asm volatile("# LLVM-MCA-BEGIN clmul");
 	while (--blocks>0){
 		c^= (poly64x2_t)LOAD128U(data); data+=16;
 		c = CL_MUL128(c, ctx->K12, 0x00) // 128+15 143
 		  ^ CL_MUL128(c, ctx->K12, 0x11);//  64+15  79
 	}
+__asm volatile("# LLVM-MCA-END");
 	len &= 15;
 	if (len){
 		poly64x2_t v={0};
@@ -930,6 +1037,48 @@ uint64_t 	CRC64B_update_N(const struct _CRC_ctx * ctx,  uint64_t crc, uint8_t *d
 	t  = CL_MUL128(c, ctx->KBP, 0x00);
 	c ^= CL_MUL128(t, ctx->KBP, 0x10);
 	return c[1];
+}
+/*! \brief Вычисление CRC8-CRC64
+	\param crc Начальное значние суммы. При загрузке должно выполняться выравнивание по старшему биту (MSB).
+
+*/
+uint64_t 	CRC64_update_N(const struct _CRC_ctx * ctx,  uint64_t crc, uint8_t *data, int len){
+	poly64x2_t c = {0, crc};
+	/*
+	if (len>=(16*4+16)){
+		c ^= (poly64x2_t)REVERSE((uint8x16_t)LOAD128U(data));data+=16;
+		c1^= (poly64x2_t)REVERSE((uint8x16_t)LOAD128U(data));data+=16;
+		c2^= (poly64x2_t)REVERSE((uint8x16_t)LOAD128U(data));data+=16;
+		c3^= (poly64x2_t)REVERSE((uint8x16_t)LOAD128U(data));data+=16;
+		c  = CL_MUL128(c, ctx->KF4, 0x11) ^ CL_MUL128(c, ctx->KF4, 0x00);// 128
+		
+	}*/
+	int blocks = (len+15) >> 4;
+	
+__asm volatile("# LLVM-MCA-BEGIN CRC64_update_N");
+	while (--blocks>0){// single folding 128 bit
+		c^= (poly64x2_t)REVERSE((uint8x16_t)LOAD128U(data));data+=16;
+		c = CL_MUL128(c, ctx->K12, 0x11) // 192
+		  ^ CL_MUL128(c, ctx->K12, 0x00);// 128
+	}
+__asm volatile("# LLVM-MCA-END");
+	poly64x2_t v;
+	len &= 15;
+	if (len){
+		v = (poly64x2_t){0};
+		__builtin_memcpy(&v, data, len);
+	} else
+		v = (poly64x2_t)LOAD128U(data);
+	c^= (poly64x2_t)REVERSE((uint8x16_t)v);
+	// final reduction 128 bit
+	c = CL_MUL128(c, ctx->K34[len], 0x11) // 128-32
+	  ^ CL_MUL128(c, ctx->K34[len], 0x00);// 64-32
+	// Barrett's reduction
+	poly64x2_t t;
+	t  = CL_MUL128(c, ctx->KBP, 0x01)^c;//(uint64x2_t){0,c[1]};
+	c ^= CL_MUL128(t, ctx->KBP, 0x11);//^(uint64x2_t){0,t[1]}; -- единица в старшем разряде Prime
+//	printf("%016llx %016llx\n", c[0],c[1]);
+	return c[0];
 }
 
 
@@ -1316,7 +1465,11 @@ CRC64 CRC64XZ_update_128(CRC64 crc, uint8_t* data){
 	c ^= SLL128U(t,64) ^ CL_MUL128(t, (poly64x2_t){0x9C3E466C172963D5ULL, 0x92D8AF2BAF0E1E85ULL}, 0x10);// E83719AF 1D663B05D
 	return c[1];
 }
-static const poly64x2_t CRC64XZ_shift[16] ={
+/* 
+static const struct _CRC_ctx CRC64XZ_ctx ={
+.KBP = {0x9C3E466C172963D5ULL, 0x92D8AF2BAF0E1E85ULL},
+.K12 = {0xE05DD497CA393AE4ULL, 0xDABE95AFC7875F40ULL} // 128 192
+.K34 = {
 [ 1] = {0x0100000000000000ULL, 0x78E4CCEE804FE350ULL},// x^{7} , x^{-57}
 [ 2] = {0x0001000000000000ULL, 0x19556E3E5470AE0BULL},// x^{15}, x^{-49}
 [ 3] = {0x0000010000000000ULL, 0xB012A88E6AAD33FCULL},// x^{23}, x^{-41}
@@ -1333,29 +1486,34 @@ static const poly64x2_t CRC64XZ_shift[16] ={
 [14] = {0x6184D55F721267C6ULL, 0x0000000000010000ULL},// x^{111}, x^{47}
 [15] = {0x22EF0D5934F964ECULL, 0x0000000000000100ULL},// x^{119}, x^{55}
 [ 0] = {0xDABE95AFC7875F40ULL, 0x0000000000000001ULL},// x^{127}, x^{63}
+},
+};*/
+/*! 
+Это такой же алгоритм как и CRC64B_update_N, но не помещается в 64 бита. Последняя константа 65 бит.
+ */
 
-};
 CRC64 CRC64XZ_update_N(CRC64 crc, uint8_t* data, int len){
 	poly64x2_t c = {crc,0};
 	
 	int blocks = (len+15 >> 4);
 	while (--blocks){
-		c ^= (uint64x2_t)LOAD128U(data); data+=16;
-		c = CL_MUL128(c, (poly64x2_t){0xE05DD497CA393AE4ULL, 0xDABE95AFC7875F40ULL}, 0x11) // 192
-		  ^ CL_MUL128(c, (poly64x2_t){0xE05DD497CA393AE4ULL, 0xDABE95AFC7875F40ULL}, 0x00);// 128
+		c ^= (poly64x2_t)LOAD128U(data); data+=16;
+		c = CL_MUL128(c, CRC64XZ_ctx.K12, 0x11) // 192
+		  ^ CL_MUL128(c, CRC64XZ_ctx.K12, 0x00);// 128
 	}
-	if (len & 15){
-		uint64x2_t v = {0};
-		__builtin_memcpy(&v, data, len&15);
+	len &= 15;
+	if (len){
+		poly64x2_t v = {0};
+		__builtin_memcpy(&v, data, len);
 		c^= v;
 	} else 
 		c^= (poly64x2_t)LOAD128U(data); 
-	c = CL_MUL128(c, CRC64XZ_shift[len & 15], 0x00) // сдвиг x^{127} mod P
-	  ^ CL_MUL128(c, CRC64XZ_shift[len & 15], 0x11);// сдвиг x^{63} mod P
+	c = CL_MUL128(c, CRC64XZ_ctx.K34[len], 0x00) // сдвиг x^{127} mod P
+	  ^ CL_MUL128(c, CRC64XZ_ctx.K34[len], 0x11);// сдвиг x^{63} mod P
 
 // Barrett's reduction
-	poly64x2_t t = CL_MUL128(c, (poly64x2_t){0x9C3E466C172963D5ULL, 0x92D8AF2BAF0E1E85ULL}, 0x00);
-	c ^= SLL128U(t,64) ^ CL_MUL128(t, (poly64x2_t){0x9C3E466C172963D5ULL, 0x92D8AF2BAF0E1E85ULL}, 0x10);// E83719AF 1D663B05D
+	poly64x2_t t = CL_MUL128(c, CRC64XZ_ctx.KBP, 0x00);
+	c ^= SLL128U(t,64) ^ CL_MUL128(t, CRC64XZ_ctx.KBP, 0x10);// коэффициент содержит единицу в старшем разряде
 	return c[1];
 }
 
@@ -1441,7 +1599,6 @@ CRC64 CRC64WE_update_64(CRC64 crc, uint8_t* data){
 	c ^= CL_MUL128(t, (poly64x2_t){0x578D29D06CC4F872ULL, 0x42F0E1EBA9EA3693ULL}, 0x11);
 	return c[0];
 }
-
 CRC64 CRC64WE_update_128(CRC64 crc, uint8_t* data){
 	poly64x2_t c = (poly64x2_t) REVERSE((uint8x16_t)LOAD128U(data));
 	c[1]^=crc;
@@ -1455,7 +1612,10 @@ CRC64 CRC64WE_update_128(CRC64 crc, uint8_t* data){
 	return c[0];
 }
 
-static const poly64x2_t CRC64WE_shift[] = {
+static const struct _CRC_ctx CRC64WE_ctx ={
+.KBP = {0x578D29D06CC4F872ULL, 0x42F0E1EBA9EA3693ULL},
+.K12 = {0x05F5C3C7EB52FAB6ULL, 0x4EB938A7D257740EULL}, // 128 192
+.K34 = {
 [ 1] = {0x158FE402EE664E3CULL, 0x0000000000000100ULL},// x^{-56}, x^{8}
 [ 2] = {0xE21AFDBF510763A3ULL, 0x0000000000010000ULL},// x^{-48}, x^{16}
 [ 3] = {0x7F996AACE22A901AULL, 0x0000000001000000ULL},// x^{-40}, x^{24}
@@ -1472,31 +1632,31 @@ static const poly64x2_t CRC64WE_shift[] = {
 [14] = {0x0001000000000000ULL, 0xC7CC909DF556430CULL},// x^{48}, x^{112}
 [15] = {0x0100000000000000ULL, 0x6E4D3E593561EE88ULL},// x^{56}, x^{120}
 [ 0] = {0x42F0E1EBA9EA3693ULL, 0x05F5C3C7EB52FAB6ULL},// x^{64}, x^{128}
-[16] = {0x05F5C3C7EB52FAB6ULL, 0x4EB938A7D257740EULL}, // 128 192
-
+},
 };
 CRC64 CRC64WE_update_N(CRC64 crc, uint8_t* data, int len){
 	poly64x2_t c = {0, crc};
 	int blocks = (len+15 >> 4);
 	while (--blocks>0){
 		c^= (poly64x2_t) REVERSE((uint8x16_t)LOAD128U(data)); data+=16;
-		c = CL_MUL128(c, CRC64WE_shift[16], 0x11) // 192
-		  ^ CL_MUL128(c, CRC64WE_shift[16], 0x00);// 128
+		c = CL_MUL128(c, CRC64WE_ctx.K12, 0x11) // 192
+		  ^ CL_MUL128(c, CRC64WE_ctx.K12, 0x00);// 128
 	}
 	poly64x2_t v;
-	if (len & 15) {
+	len &= 15;
+	if (len) {
 		v = (poly64x2_t){0};
-		__builtin_memcpy(&v, data, len&15);
+		__builtin_memcpy(&v, data, len);
 	} else
 		v = (poly64x2_t)LOAD128U(data);
 	c^= (poly64x2_t) REVERSE((uint8x16_t)v);
 	//c = SLL128U(c,64);
-	c = CL_MUL128(c, CRC64WE_shift[len & 15], 0x11) // 128
-	  ^ CL_MUL128(c, CRC64WE_shift[len & 15], 0x00);// 64
+	c = CL_MUL128(c, CRC64WE_ctx.K34[len], 0x11) // 128
+	  ^ CL_MUL128(c, CRC64WE_ctx.K34[len], 0x00);// 64
 // Barrett's reduction
 	poly64x2_t 
-	t = CL_MUL128(c, (poly64x2_t){0x578D29D06CC4F872ULL, 0x42F0E1EBA9EA3693ULL}, 0x01) ^c;//(uint64x2_t){0,c[0]};
-	c^= CL_MUL128(t, (poly64x2_t){0x578D29D06CC4F872ULL, 0x42F0E1EBA9EA3693ULL}, 0x11);
+	t = CL_MUL128(c, CRC64WE_ctx.KBP, 0x01) ^c;// (uint64x2_t){0,c[1]};
+	c^= CL_MUL128(t, CRC64WE_ctx.KBP, 0x11) ;// ^ (uint64x2_t){0,t[1]};// обнуляет старшую часть
 	return c[0];
 }
 
@@ -2163,8 +2323,8 @@ CRC32 CRC32_update_32(CRC32 crc, uint8_t *data){/* шаг -- четыре бай
 //	poly64x2_t c = {crc};
 	return barrett32_requction((poly64x2_t)(uint32x4_t){crc}, (poly64x2_t){0x104D101DF,0x104C11DB7}, 32);
 #else
-	poly64x2_t c = {crc};
-	c = CL_MUL128(c, (v2du){0x104D101DF,0x104C11DB7}, 0x00);
+	poly64x2_t c = {0,crc};
+	c = CL_MUL128(c, (v2du){0x104D101DF,0x104C11DB7}, 0x01);
 	c = CL_MUL128(c>>32, (v2du){0x104D101DF,0x104C11DB7}, 0x10);
 	return c[0];
 #endif
@@ -2234,7 +2394,7 @@ poly64x2_t CRC64_single_folding(poly64x2_t c, const poly64x2_t K34)
 //	v = (v2du)REVERSE((v16qi)v);
 	return CL_MUL128(c, K34, 0x00) ^ CL_MUL128(c, K34, 0x11);
 }
-static const poly64x2_t KBP = { BARRETT_U32, POLY32_};
+static const poly64x2_t KBP = { BARRETT_U32, POLY32_};// обе константы 33 бита
 CRC32 CRC32_update_N_(CRC32 crc, uint8_t *data, int n){
  	int i = n&0xF;
 	poly64x2_t c,v;
@@ -2272,13 +2432,13 @@ CRC32 CRC32_update_N_(CRC32 crc, uint8_t *data, int n){
 // редуцируем 128 бит в 96 бита c3:c2:c1:c0
 	c  = CL_MUL128(c, K56, 0x11) ^ SLL128U((poly64x2_t){c[0],0}, 32);// (v2du)MASK0120((v16qi)c);// {c[0]<<32, c[0]>>32};
 // редуцируем 96 бит в 64 бита
-	printf("c96: %08llX:%08llX => ", c[0], c[1]);
+	//printf("c96: %08llX:%08llX => ", c[0], c[1]);
 c ^= CL_MUL128(c, (poly64x2_t){0x490D678DULL}, 0x01) ^ (poly64x2_t){0, c[1]};// в этом нет смысла, но это обнуляет.
-	printf("c: %08llX:%08llX => \n", c[0], c[1]);
+	//printf("c: %08llX:%08llX => \n", c[0], c[1]);
 // Barrett's reduction 64 в 32
 	poly64x2_t t = CL_MUL128(c , KBP, 0x00);
 	c ^= CL_MUL128(t , KBP, 0x11);
-	printf("c: %08llX:%08llX => \n", c[0], c[1]);
+	//printf("c: %08llX:%08llX => \n", c[0], c[1]);
 	return c[0];// & CRC32_MASK;
 }
 uint32_t CRC32_sh_high[] = {
@@ -2310,29 +2470,31 @@ uint32_t    CRC32_update_N(uint32_t crc, uint8_t *data, int len) {
 		c = CL_MUL32(c>>32, 0xF200AA66) // 96
 		  ^ CL_MUL32(c>> 0, 0x490D678D);// 64
 	}
-	val = *(uint64_t*) data; 
 	if (len&7) {
-		val &= (~0ULL)>>(64- (len&7)*8);
-	}
+		val = 0;// *(uint64_t*) data; 
+		__builtin_memcpy(&val, data, len&7);
+		//val &= (~0ULL)>>(64- (len&7)*8);
+	} else 
+		val = *(uint64_t*) data;
 	c^= __builtin_bswap64(val);
 	c= CL_MUL32(c>>32, CRC32_sh_high[len&7]) // 64,  8, 16,24,32,40,48,56
 	 ^ CL_MUL32(c>> 0, CRC32_sh_low [len&7]);// 32,-24,-16,-8, 0, 8,16,24
 // Редуцирование 64 бит в 32 бит
-	uint64_t t = CL_MUL32(c>>32, 0x04D101DF) ^ c;
+	uint64_t t = CL_MUL32(c>>32, 0x04D101DF) ^ c;// x 0x104D101DFULL -- единица в старшем разряде, 33 бита
 	c^= CL_MUL32(t>>32, 0x04C11DB7);
 	return c;
 }
 // коэффициенты для CRC64
 poly64x2_t CRC64_final_reduction(poly64x2_t c, const poly64x2_t KPB, const poly64x2_t K56)
 {
-// multiply with k5 [x^128 mod P(x)]
+// multiply with k5 [x^128 mod P(x)] (c3:c2)*K56[1] ^(с1:c0:0:0) -- выравнивание по левому краю 128бит
 	c  = CL_MUL128(c, K56, 0x11) ^ (poly64x2_t){0,c[0]};
 // Barrett's reduction 128 в 64
 	poly64x2_t t = CL_MUL128(c, KBP, 0x01) ^ (poly64x2_t){0,c[0]};
 	c^= CL_MUL128(t , KBP, 0x11) ^ (poly64x2_t){0,t[0]};
 	return c;
 }
-
+static const poly64x2_t K56_ = {/* K6 */0x1490D678D, /* K5 */0xF200AA66};
 v2du CRC32_update_128(v2du crc, uint8_t *data){
 // начальное преобразование, загрузка вектора
 	poly64x2_t c = SLL128U((poly64x2_t)crc, 96);// {0,crc[0]<<32};
@@ -2343,12 +2505,15 @@ v2du CRC32_update_128(v2du crc, uint8_t *data){
 	c^=v;
 // сюда втыкается folding по вектору 256*n в 128
 // ...
-// финальное редуцирование преобразует 128 бит в 32
-// редуцируем 128 бит в 96 бита c3:c2:c1:c0
-	c  = CL_MUL128(c, K56, 0x11) ^ SLL128U((poly64x2_t){c[0],0}, 32);// (v2du)MASK0120((v16qi)c);// {c[0]<<32, c[0]>>32};;
-// редуцируем 96 бит в 64 бита
-	c ^= CL_MUL128(c, K56, 0x01);
-// Barrett's reduction
+// финальное редуцирование преобразует 128 бит в 32 K56[1] = (c3:c2)*XT_modP(64+32) ^ (c1:c0)*XT_modP(32)
+// 32 это финальный сдвиг
+// редуцируем 128 бит в 96 бита c3:c2:c1:c0 => (c3:c2)*K56[1] ^ (c1:c0:0)
+	//c  = CL_MUL128(c, K56, 0x11) ^ SLL128U((poly64x2_t){c[0],0}, 32);
+	c  = CL_MUL128(c, K56, 0x11) ^ CL_MUL128(c, (poly64x2_t){1ULL<<32}, 0x00);
+	
+// редуцируем 96 бит в 64 бита с2:c1:c0 => (c1:c0) ^ (c2 *XT_modP(P,32)) -- в старшей части будет отстаток
+	c ^= CL_MUL128(c, K56, 0x01);// ^ (poly64x2_t){0,c[1]}; // -- обнуляет старшую часть
+// Barrett's reduction 64 -> 32
 	poly64x2_t t = CL_MUL128(c , KBP, 0x00);
 	c^= CL_MUL128(t , KBP, 0x11);
 	return (v2du)c;
@@ -2655,8 +2820,35 @@ void crc64b_gen(uint64_t poly, uint32_t bits)
 	}
 	printf("}};\n");
 }	
+/* Генерирует сдвиговые константы */
+void crc64_gen(uint64_t poly, uint32_t bits)
+{
+	uint64_t ur = barret_calc(poly<<(64-bits),64);
+//	uint64_t ur= bit_reflect(u)<<1|1;
+	uint64_t pr= poly;//<<1 | 1;
+//	printf("BarrettR u = x^%d/P(x) Ur=0x%0*llX Pr=0x%0*llX\n", bits*2, bits/4, ur, bits/4, pr);
+	printf(".KBP = {0x%016llX, 0x%016llX},\n", ur, pr<<(64-bits));
+	uint64_t k;
+		int sh1 = 128+64;
+		int sh2 = 64+64;
+	k = xt_mod_P(poly, sh2, bits);
+	printf(".K12 = {0x%0*llX, ", bits/4, k);
+	k = xt_mod_P(poly, sh1, bits);
+	printf("0x%0*llX},// x^{%2d}, x^{%2d}\n", bits/4, k, sh2, sh1);
+	printf(".K34 = {\n");
+	int i;
+	for(i=0; i<16;i++){
+		int sh1 = 8*i+bits-56;
+		int sh2 = 8*i+bits-64-56;
+		k = xt_mod_P(poly, sh2, bits);
+		printf("[%2d] = {0x%0*llX, ",(i+1) & 15, 16/* bits/4 */, k<<(64-bits));
+		k = xt_mod_P(poly, sh1, bits);
+		printf("0x%0*llX},// x^{%2d}, x^{%2d}\n", 16/* bits/4 */, k<<(64-bits), sh2, sh1);
+	}
+	printf("}};\n");
+}	
 
-
+#if defined(DEBUG_CRC)
 int main()
 {
 	uint8_t data[] = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
@@ -2671,105 +2863,138 @@ if (0) {
 	printf("\n");
 }
 char test[] = "123456789";
-if (0) {// CRC-32
+if (1) {// CRC-32
+#define CRC32_POLY 0x04C11DB7
+#define CRC32_INIT 0xFFFFFFFF
+#define CRC32_XOUT 0xFFFFFFFF
+
 	uint32_t crc;
 	printf("CRC-32\n"); 
-	crc_gen_table(0x04C11DB7, 32,16);//CRC32
-	crc = 0xFFFFFFFF;
+	crc_gen_table(CRC32_POLY, 32,16);//CRC32
+	crc = CRC32_INIT;
 	for(i=0; i<9; i++){
 		crc = CRC32_update(crc, test[i]);
 	}
-	printf("Test =%0X ..%s\n", crc^~0UL, (crc^~0UL)==CRC32_CHECK?"ok":"fail");
-	barrett_k(0x04C11DB7, 32);
+	printf("Test =%0X ..%s\n", crc^CRC32_XOUT, (crc^CRC32_XOUT)==CRC32_CHECK?"ok":"fail");
+	barrett_k(CRC32_POLY, 32);
 	uint64_t u = barret_calc(0x04C11DB7ULL<<32, 64);
 	printf("Barrett u = Ux= 0x1%016"PRIX64"\n", u);
 	
 	uint64_t k;
 	for(i=0; i<8;i++){
-		k = xt_mod_P(0x04C11DB7, 8+8*i, 32);
+		k = xt_mod_P(CRC32_POLY, 8+8*i, 32);
 		printf("K7(%3d) = %08llX (N)\n",32+8+8*i, k);
 	}
 	for(i=0; i<8;i++){
-		k = xt_mod_P(0x04C11DB7, -8*i, 32);
+		k = xt_mod_P(CRC32_POLY, -8*i, 32);
 		printf("K8(%3d) = %08llX (N)\n",-8*i, k);
 	}
+crc64_gen(CRC32_POLY, 32);
 
-
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC32_update(crc, data[i]);
 	}
-	printf("CRC32 = %08X (x4)\n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x4)\n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC32_update_8(crc, &data[i]);
 	}
-	printf("CRC32 = %08X (x8) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x8) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=2){
 		crc = CRC32_update_16(crc, &data[i]);
 	}
-	printf("CRC32 = %08X (x16) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x16) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=3){
 		crc = CRC32_update_24(crc, &data[i]);
 	}
-	printf("CRC32 = %08X (x24) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x24) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=4){
 		crc = CRC32_update_32(crc, &data[i]);
 	}
-	printf("CRC32 = %08X (x32) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x32) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=8){
 		crc = CRC32_update_64(crc, &data[i]);
 	}
-	printf("CRC32 = %08X (x64) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x64) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=12){
 		crc = CRC32_update_96(crc, &data[i]);
 	}
-	printf("CRC32 = %08X (x96) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x96) \n", crc ^ CRC32_XOUT);
 
 	v2du vcrc	= {0xFFFFFFFF};
 	for (i=0; i< len; i+=16){
 		vcrc = CRC32_update_128(vcrc, &data[i]);
 	}
-	printf("CRC32 = %08X (x128) \n", vcrc[0] ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (x128) \n", vcrc[0] ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	CRC64 crc64	= 0xFFFFFFFFULL<<32;
+	for (i=0; i< len; i+=3){
+		crc64 = CRC64_update_N(&CRC32_ctx, crc64, &data[i],3);
+	}
+	printf("CRC32 = %08X (xN=3) \n", (crc64>>32) ^ CRC32_XOUT);
+
+	crc64	= 0xFFFFFFFFULL<<32;
+	for (i=0; i< len; i+=8){
+		crc64 = CRC64_update_N(&CRC32_ctx, crc64, &data[i],8);
+	}
+	printf("CRC32 = %08X (xN=8) \n", (crc64>>32) ^ CRC32_XOUT);
+
+	crc64	= 0xFFFFFFFFULL<<32;
+	for (i=0; i< len; i+=16){
+		crc64 = CRC64_update_N(&CRC32_ctx, crc64, &data[i],16);
+	}
+	printf("CRC32 = %08X (xN=16) \n", (crc64>>32) ^ CRC32_XOUT);
+
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=6){
 		crc = CRC32_update_N(crc, &data[i],6);
 	}
-	printf("CRC32 = %08X (xN=6) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (xN=6) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=8){
 		crc = CRC32_update_N(crc, &data[i],8);
 	}
-	printf("CRC32 = %08X (xN=8) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (xN=8) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=12){
 		crc = CRC32_update_N(crc, &data[i],12);
 	}
-	printf("CRC32 = %08X (xN=12) \n", crc ^ 0xFFFFFFFF);
+	printf("CRC32 = %08X (xN=12) \n", crc ^ CRC32_XOUT);
 
-	crc	= 0xFFFFFFFF;
+	crc	= CRC32_INIT;
 	for (i=0; i< len; i+=16){
 		crc = CRC32_update_N(crc, &data[i],16);
 	}
-	printf("CRC32 = %08X (xN=16) \n", crc ^ 0xFFFFFFFF);
-
-	crc	= 0xFFFFFFFF;
+	printf("CRC32 = %08X (xN=16) \n", crc ^ CRC32_XOUT);
+	uint64_t ts;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32_INIT;
 	crc = CRC32_update_N(crc, data, len);
-	printf("CRC32 = %08X (xN) \n", crc ^ 0xFFFFFFFF);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC32 = %08X (xN) %"PRId64" clk\n", crc ^ CRC32_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc64	= 0xFFFFFFFFULL<<32;
+	crc64 = CRC64_update_N(&CRC32_ctx, crc64, data,len);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC32 = %08X (xN) %"PRId64" clk\n", (crc64>>32) ^ CRC32_XOUT, -ts);
+
+
+
 
 	int n;
 	for (n=1; n<len; n++) {
@@ -2784,10 +3009,34 @@ if (0) {// CRC-32
 		if (crc32!=crc) printf("CRC32 = fail %08"PRIX32" (%d)\n", crc ^ 0xFFFFFFFF, n);
 	}
 	printf("CRC32 done\n\n");
+	for (n=1; n<len; n++) {
+		crc = 0xFFFFFFFF;
+		for(i=0; i<n; i+=1){
+			crc = CRC32_update(crc, data[i]);
+		}
+		crc64	= 0xFFFFFFFFULL<<32;
+		crc64 = CRC64_update_N(&CRC32_ctx, crc64, data,n);
 
+		if ((crc64>>32)!=crc) printf("CRC32 = fail %08"PRIX32" (%d)\n", crc ^ 0xFFFFFFFF, n);
+	}
+	printf("CRC32 done\n\n");
+/*
+	for (n=1; n<len; n++) {
+		crc = 0xFFFFFFFF;
+		for(i=0; i<n; i+=1){
+			crc = CRC32_update(crc, data[i]);
+		}
+		uint32_t crc32;
+		crc32 = 0xFFFFFFFF;
+		crc32 = CRC32_update_N_(crc32, &data[0], n);
+
+		if (crc32!=crc) printf("CRC32 = fail %08"PRIX32" (%d)\n", crc ^ 0xFFFFFFFF, n);
+	}
+	printf("CRC32 done\n\n");
+*/
 	
 }
-if (1) {// CRC-32B
+if (0) {// CRC-32B
 	uint32_t crc;
 	printf("CRC-32B %08llX\n", bit_reflect(0x04C11DB7ULL<<32));
 	crc_gen_inv_table(bit_reflect(0x04C11DB7ULL<<32), 32);//CRC32/ZIP
@@ -2871,7 +3120,9 @@ if (1) {// CRC-32B
 	crc = CRC32B_update_N(crc, &data[0], len);
 	printf("CRC32B = %08X (xN) \n", crc ^ 0xFFFFFFFF);
 }
-if (1) {// CRC-32C
+if (0) {// CRC-32C
+	#define CRC32C_INIT 0xFFFFFFFF
+	#define CRC32C_XOUT 0xFFFFFFFF
 //	barrett_k_ref(bit_reflect(0x04C11DB7ULL<<32), 32);
 	printf("CRC-32C (Castagnoli)\n");
 	crc_gen_inv_table(bit_reflect(0x1EDC6F41ULL<<32), 32);//CRC32C
@@ -2901,59 +3152,100 @@ if (1) {// CRC-32C
 	printf("K3(223) = %08llX (N)\n", k);
 	
 	crc64b_gen(0x105EC76F1>>1, 32);
-	
+	uint64_t ts;
+
 	len = 96;
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC32C_update(crc, data[i]);
 	}
-	printf("CRC32C = %08X (x4)\n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x4) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC32C_update_8(crc, &data[i]);
 	}
-	printf("CRC32C = %08X (x8) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x8) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=2){
 		crc = CRC32C_update_16(crc, &data[i]);
 	}
-	printf("CRC32C = %08X (x16) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x16) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=3){
 		crc = CRC32C_update_24(crc, &data[i]);
 	}
-	printf("CRC32C = %08X (x24) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x24) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=4){
 		crc = CRC32C_update_32(crc, &data[i]);
 	}
-	printf("CRC32C = %08X (x32) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x32) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=8){
 		crc = CRC32C_update_64(crc, &data[i]);
 	}
-	printf("CRC32C = %08X (x64) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x64) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	for (i=0; i< len; i+=16)
 		crc = CRC32C_update_128(crc, &data[i]);
-	printf("CRC32C = %08X (x128) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (x128) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
 	crc = CRC32C_update_N(crc, &data[0], len);
-	printf("CRC32C = %08X (xN) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (xN) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
+	
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32C_INIT;
+	crc = CRC64B_update_N(&CRC32C_ctx, crc, &data[0], len);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32C = %08X (xN) %"PRId64" clk\n", crc ^ CRC32C_XOUT, -ts);
+	
+	int n;
+	for (n=1; n<len; n++) {
+		crc = CRC32C_INIT;
+		for(i=0; i<n; i+=1){
+			crc = CRC32C_update(crc, data[i]);
+		}
+		uint32_t crc1;
+		crc1 = CRC32C_INIT;
+		crc1 = CRC64B_update_N(&CRC32C_ctx, crc1, &data[0], n);
+
+		if (crc1!=crc) printf("CRC32C = fail %04"PRIX32" (%d)\n", crc ^ CRC32C_XOUT, n);
+	}
+	printf("CRC-32C = ok\n\n");
+
 }
-if (1) {// CRC-32K/Koopman
+if (0) {// CRC-32K/Koopman
 
 	printf("CRC-32K/BACnet (Koopman)\n"); 
 	crc_gen_inv_table(bit_reflect(0x741B8CD7ULL<<32),32);
 	barret_calc_ref(bit_reflect(0x741B8CD7ULL<<32), 32);
 	barret_calc64_ref(bit_reflect(0x741B8CD7ULL<<32), 64);
 	#define CRC32K_CHECK 0x2D3DD0AE
+	#define CRC32K_INIT 0xFFFFFFFF
+	#define CRC32K_XOUT 0xFFFFFFFF
 	uint32_t crc;
 	crc = ~0UL;
 	for(i=0; i<9; i++){
@@ -2979,73 +3271,138 @@ if (1) {// CRC-32K/Koopman
 	printf("K3(256-1) = %08llX (N)\n", k);
 
 	crc64b_gen(0x1D663B05D>>1, 32);
+	uint64_t ts;
 
 	len = 96;
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC32K_update(crc, data[i]);
 	}
-	printf("CRC32K = %08X (x4)\n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32K = %08X (x4) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC32K_update_8(crc, &data[i]);
 	}
-	printf("CRC32К = %08X (x8) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (x8) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=2){
 		crc = CRC32K_update_16(crc, &data[i]);
 	}
-	printf("CRC32К = %08X (x16) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (x16) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=3){
 		crc = CRC32K_update_24(crc, &data[i]);
 	}
-	printf("CRC32К = %08X (x24) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (x24) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=4){
 		crc = CRC32K_update_32(crc, &data[i]);
 	}
-	printf("CRC32К = %08X (x32) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (x32) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
 
-	crc	= 0xFFFFFFFF;
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=8)
 		crc = CRC32K_update_64(crc, &data[i]);
-	printf("CRC32К = %08X (x64) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (x64) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=16)
 		crc = CRC32K_update_128(crc, &data[i]);
-	printf("CRC32К = %08X (x128) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (x128) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=4)
 		crc = CRC32K_update_N(crc, &data[i], 4);
-	printf("CRC32К = %08X (xN=32) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (xN=32) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=6)
 		crc = CRC32K_update_N(crc, &data[i], 6);
-	printf("CRC32К = %08X (xN=48) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (xN=48) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=8)
 		crc = CRC32K_update_N(crc, &data[i], 8);
-	printf("CRC32К = %08X (xN=64) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (xN=64) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=12)
 		crc = CRC32K_update_N(crc, &data[i], 12);
-	printf("CRC32К = %08X (xN=96) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (xN=96) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	for (i=0; i< len; i+=16)
 		crc = CRC32K_update_N(crc, &data[i], 16);
-	printf("CRC32К = %08X (xN=128) \n", crc ^ 0xFFFFFFFF);
-	crc	= 0xFFFFFFFF;
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (xN=128) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
 	crc = CRC32K_update_N(crc, &data[0], len);
-	printf("CRC32К = %08X (xN) \n", crc ^ 0xFFFFFFFF);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32К = %08X (xN) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC32K_INIT;
+	crc = CRC64B_update_N(&CRC32K_ctx, crc, &data[0], len);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC32K = %08X (xN) %"PRId64" clk\n", crc ^ CRC32K_XOUT, -ts);
+	
+	int n;
+	for (n=1; n<len; n++) {
+		crc = CRC32K_INIT;
+		for(i=0; i<n; i+=1){
+			crc = CRC32K_update(crc, data[i]);
+		}
+		uint32_t crc1;
+		crc1 = CRC32K_INIT;
+		crc1 = CRC64B_update_N(&CRC32K_ctx, crc1, &data[0], n);
+
+		if (crc1!=crc) printf("CRC32K = fail %04"PRIX32" (%d)\n", crc ^ CRC32K_XOUT, n);
+	}
+	printf("CRC-32K = ok\n\n");
+
 }
 	len=96;
-if (0) {// CRC-24/OpenPGP
+if (1) {// CRC-24/OpenPGP
+	printf("CRC-24/OpenPGP\n"); 
+	crc_gen_table(CRC24_POLY, 24,16);//CRC32
+	CRC32 crc24 = CRC24_INIT;
+	for(i=0; i<9; i++){
+		crc24 = CRC24_update(crc24, test[i]);
+	}
+	printf("Test =%0X ..%s\n", crc24, (crc24)==CRC24_CHECK?"ok":"fail");
+	barrett_k(CRC24_POLY, 24);
 
+
+crc64_gen(CRC24_POLY, 24);
 	uint32_t crc;
 	crc	= CRC24_INIT;
 	for (i=0; i< len; i+=1){
@@ -3128,9 +3485,29 @@ if (0) {// CRC-24/OpenPGP
 	crc	= CRC24_INIT;
 	crc = CRC24_update_N(crc, data, len);
 	printf("CRC-24 = %08X (xN=len) \n", crc);
+uint64_t ts;
+CRC64 crc64;
+	ts = __builtin_ia32_rdtsc();
+	crc64	= (uint64_t)CRC24_INIT<<(40);
+	crc64 = CRC64_update_N(&CRC24_ctx, crc64, data,len);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC-24 = %08X (xN) %"PRId64" clk\n", (crc64>>40), -ts);
+	
+	int n;
+	for (n=1; n<len; n++) {
+		crc = CRC24_INIT;
+		for(i=0; i<n; i+=1){
+			crc = CRC24_update(crc, data[i]);
+		}
+		crc64	= (uint64_t)CRC24_INIT<<40;
+		crc64 = CRC64_update_N(&CRC24_ctx, crc64, data,n);
+
+		if ((crc64>>40)!=crc) printf("CRC-24 = fail %04"PRIX32" (%d)\n", crc, n);
+	}
+	printf("CRC-24 done\n\n");
 
 }
-if (1) {// CRC-16/MODBUS poly=0x8005 init=0xffff refin=true refout=true xorout=0x0000 check=0x4b37
+if (0) {// CRC-16/MODBUS poly=0x8005 init=0xffff refin=true refout=true xorout=0x0000 check=0x4b37
 #define CRC16M_INIT 0xFFFF
 #define CRC16M_POLY 0x8005
 #define CRC16M_XOUT 0x0000
@@ -3276,13 +3653,15 @@ if (1) {// poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x
 		k = xt_mod_P_ref(0x8408ULL, sh2, 16);
 		printf("0x%04llX},// x^{%d}, x^{%d}\n", k, sh1, sh2);
 	}
+	uint64_t ts;
 
-	
+	ts = __builtin_ia32_rdtsc();
 	crc	= CRC16B_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC16B_update(crc, data[i]);
 	}
-	printf("CRC16B = %04X\n", crc^CRC16B_XOUT);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16B = %04X %"PRId64" clk\n", crc^CRC16B_XOUT, -ts);
 /*
 	crc	= CRC16B_INIT;
 	for (i=0; i< len; i+=1){
@@ -3290,9 +3669,11 @@ if (1) {// poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x
 	}
 	printf("CRC16M = %04X (x8)\n", crc^CRC16B_XOUT);
 */
+	ts = __builtin_ia32_rdtsc();
 	crc	= CRC16B_INIT;
 	crc = CRC64B_update_N(&CRC16B_ctx, crc, &data[0], len);
-	printf("CRC16B = %04X (xN)\n", crc^CRC16B_XOUT);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16B = %04X (xN) %"PRId64" clk\n", crc^CRC16B_XOUT, -ts);
 	
 	int n;
 	for (n=1; n<len; n++) {
@@ -3309,7 +3690,7 @@ if (1) {// poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x
 	printf("CRC-16B = ok\n\n");
 	
 }
-if (0) {// CRC-16
+if (1) {// CRC-16
 	printf("CRC-16\n");
 #define CRC16_INIT 0xFFFF
 #define CRC16_POLY 0x1021
@@ -3332,25 +3713,41 @@ if (0) {// CRC-16
 	printf("K^{-%d} = %04llX\n", 8, k);
 	k = xt_mod_P_neg(CRC16_POLY,16,16);
 	printf("K^{-%d} = %04llX\n",16, k);
+crc64_gen(CRC16_POLY, 16);
+	uint64_t ts;
 
-		crc	= CRC16_INIT;
-		for (i=0; i< len; i+=1){
-			crc = CRC16_update1(crc, data[i]);
-		}
-		printf("CRC16 = %04X\n", crc ^ CRC16_XOUT);
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC16_INIT;
+	for (i=0; i< len; i+=1){
+		crc = CRC16_update(crc, data[i]);
+	}
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16 = %04X %"PRId64" clk\n", crc ^ CRC16_XOUT, -ts);
 
-		crc	= CRC16_INIT;
-		for (i=0; i< len; i+=1){
-			crc = CRC16_update_(crc, data[i]);
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC16_INIT;
+	for (i=0; i< len; i+=1){
+		crc = CRC16_update1(crc, data[i]);
+	}
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16 = %04X %"PRId64" clk\n", crc ^ CRC16_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC16_INIT;
+	for (i=0; i< len; i+=1){
+		crc = CRC16_update_(crc, data[i]);
 //			crc = CRC16_update_8(crc, &data[i]);
-		}
-		printf("CRC16 = %04X\n", crc ^ CRC16_XOUT);
+	}
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16 = %04X %"PRId64" clk\n", crc ^ CRC16_XOUT, -ts);
 
-		crc	= CRC16_INIT;
-		for (i=0; i< len; i+=1){
-			crc = CRC16_update_8(crc, &data[i]);
-		}
-		printf("CRC16 = %04X (x8)\n", crc ^ CRC16_XOUT);
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC16_INIT;
+	for (i=0; i< len; i+=1){
+		crc = CRC16_update_8(crc, &data[i]);
+	}
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16 = %04X (x8) %"PRId64" clk\n", crc ^ CRC16_XOUT, -ts);
 
 		crc	= CRC16_INIT;
 		for (i=0; i< len; i+=2){
@@ -3377,7 +3774,28 @@ if (0) {// CRC-16
 		crc = CRC16_INIT;
 		crc = CRC16_update_64(crc, data, len);
 		printf("CRC16 = %04X (xN)\n", crc ^ CRC16_XOUT);
+
+	CRC64 crc64;
+	ts = __builtin_ia32_rdtsc();
+	crc64	= (uint64_t)CRC16_INIT<<(48);
+	crc64 = CRC64_update_N(&CRC16_ctx, crc64, data,len);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC16 = %04X (xN) %"PRId64" clk\n", (crc64>>48)^CRC16_XOUT, -ts);
+
+	int n;
+	for (n=1; n<len; n++) {
+		crc = CRC16_INIT;
+		for(i=0; i<n; i+=1){
+			crc = CRC16_update(crc, data[i]);
+		}
+		crc64	= (uint64_t)CRC16_INIT<<48;
+		crc64 = CRC64_update_N(&CRC16_ctx, crc64, data,n);
+
+		if ((crc64>>48)!=crc) printf("CRC-16 = fail %04"PRIX32" (%d)\n", crc^CRC16_XOUT, n);
 	}
+	printf("CRC16 done\n\n");
+
+}
 
 
 
@@ -3487,7 +3905,7 @@ if (0) {// CRC-64/XZ
 
 		if (crc641!=crc64) printf("CRC64/XZ = fail %016"PRIX64" (%d)\n", crc64 ^ ~0ULL, n);
 	}
-	printf("CRC64/XZ = ok\n\n");
+	printf("CRC64XZ = ok\n\n");
 
 
 }
@@ -3589,7 +4007,7 @@ if (0) {// CRC-24/OpenPGP
 //	uint64_t u = barret_calc(0x864CFB,24);
 //	printf("Barrett u = x^%d/P(x) U =0x1%0*llX\n", 48, 6, u);
 }
-if (1) {// CRC-8_I/CODE 
+if (0) {// CRC-8_I/CODE 
 	printf("CRC-8/I-CODE\n");//  poly=0x1d init=0xfd refin=false refout=false xorout=0x00 check=0x7e
 #define CRC8I_INIT 0xFD
 #define CRC8I_POLY 0x1D
@@ -3651,7 +4069,7 @@ if (1) {// CRC-8_I/CODE
 	printf("CRC8I = %02X (xN) %"PRId64" clk\n", crc ^ CRC8I_XOUT, -ts);
 
 }
-if (1) {// CRC-8/BAC
+if (0) {// CRC-8/BAC
 	printf("CRC-8/BAC\n");//  poly=0x81 init=0xff refin=true refout=true xorout=0xff check=0x89
 #define CRC8B_INIT 0xFF
 #define CRC8B_POLY 0x81
@@ -3706,23 +4124,29 @@ if (1) {// CRC-8/BAC
 	printf("CRC8B = %02X  %"PRId64" clk\n", crc ^ CRC8B_XOUT, -ts);
 
 	crc	= CRC8B_INIT;
+	ts = __builtin_ia32_rdtsc();
 	for (i=0; i< len; i+=1){
 		crc = CRC8B_update_8(crc, data[i]);
 	}
-	printf("CRC8B = %02X (x8)\n", crc ^ CRC8B_XOUT);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC8B = %02X (x8) %"PRId64" clk\n", crc ^ CRC8B_XOUT, -ts);
 
 	crc	= CRC8B_INIT;
+	ts = __builtin_ia32_rdtsc();
 	for (i=0; i< len; i+=4){
 		crc = CRC8B_update_32(crc, &data[i]);
 	}
-	printf("CRC8B = %02X (x32)\n", crc ^ CRC8B_XOUT);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC8B = %02X (x32) %"PRId64" clk\n", crc ^ CRC8B_XOUT, -ts);
 	
 	crc	= CRC8B_INIT;
+	ts = __builtin_ia32_rdtsc();
 	for (i=0; i< len; i+=8){
 		uint64_t val = *(uint64_t*)&data[i];
 		crc = CRC8B_update_64(crc, val);
 	}
-	printf("CRC8B = %02X (x64)\n", crc ^ CRC8B_XOUT);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC8B = %02X (x64) %"PRId64" clk\n", crc ^ CRC8B_XOUT, -ts);
 
 	ts = __builtin_ia32_rdtsc();
 	crc	= CRC8B_INIT;
@@ -3735,6 +4159,12 @@ if (1) {// CRC-8/BAC
 	ts = __builtin_ia32_rdtsc();
 	crc	= CRC8B_INIT;
 	crc = CRC8B_update_N(crc, &data[0], len);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC8B = %02X (xN) %"PRId64" clk\n", crc ^ CRC8B_XOUT, -ts);
+
+	ts = __builtin_ia32_rdtsc();
+	crc	= CRC8B_INIT;
+	crc = CRC64B_update_N(&CRC8B_ctx, crc, &data[0], len);
 	ts -= __builtin_ia32_rdtsc();
 	printf("CRC8B = %02X (xN) %"PRId64" clk\n", crc ^ CRC8B_XOUT, -ts);
 
@@ -3755,13 +4185,16 @@ if (1) {// CRC-8/BAC
 
 	
 }
-if (0) {// CRC-8
-	printf("CRC-8\n");//  poly=0x07 init=0x00 refin=false refout=false xorout=0x00 check=0xf4
+if (1) {// CRC-8/SMBus
+	printf("CRC-8/SMBus\n");//  poly=0x07 init=0x00 refin=false refout=false xorout=0x00 check=0xf4
 #define CRC8_INIT 0x00
 #define CRC8_POLY 0x07
 #define CRC8_XOUT 0x00
 #define CRC8_CHECK 0xF4
 	crc_gen_table(CRC8_POLY, 8,16);//CRC32
+
+crc64_gen(CRC8_POLY, 8);
+
 	uint32_t crc;
 	crc = CRC8_INIT;
 	for(i=0; i<9; i++){
@@ -3769,6 +4202,8 @@ if (0) {// CRC-8
 	}	
 	printf("Check =%0X ..%s\n", crc^CRC8_XOUT, (crc^CRC8_XOUT)==CRC8_CHECK?"ok":"fail");
 	barrett_k(CRC8_POLY, 8);
+
+
 
 	crc = CRC8_INIT;
 	crc = CRC8_update_128(crc, &test[0], 9);
@@ -3825,6 +4260,28 @@ if (0) {// CRC-8
 	crc	= CRC8_INIT;
 	crc = CRC8_update_128(crc, &data[0], len);
 	printf("CRC8 = %02X (xN)\n", crc ^ CRC8_XOUT);
+uint64_t ts;
+CRC64 crc64;
+	ts = __builtin_ia32_rdtsc();
+	crc64 = (uint64_t)CRC8_INIT<<(64-8);
+	crc64 = CRC64_update_N(&CRC8_ctx, crc64, &data[0], len);
+	ts -= __builtin_ia32_rdtsc();
+	printf("CRC8 = %02X (xN) %"PRId64" clk\n", (crc64>>(64-8)) ^ CRC8_XOUT, -ts);
+
+	
+	int n;
+	uint64_t clocks=0;
+	for (n=1; n<len; n++) {
+		crc = CRC8_INIT;
+		for(i=0; i<n; i+=1){
+			crc = CRC8_update(crc, data[i]);
+		}
+		crc64 = (uint64_t)CRC8_INIT<<(64-8);
+		crc64 = CRC64_update_N(&CRC8_ctx, crc64, &data[0], n);
+		if (crc64>>(64-8)!=crc) printf("CRC8 = fail %02"PRIX32" (%d)\n", crc ^ CRC8B_XOUT, n);
+	}
+	printf("CRC8 = ok\n\n");
+
 
 }
 
@@ -3860,7 +4317,7 @@ if (0) {// CRC-8
 	r_= gfmul64_(a, b);
 	r2= gfmul64_2(a, b);
 	printf("r: 0x%016"PRIX64" %s %s\n", r, r==r_? "ok":"fail", r==r2? "ok":"fail");
-	if (0) {//GF(2m) Reflect P(x) = x64 + x4 + x3 + x + 1
+	if (1) {//GF(2m) Reflect P(x) = x64 + x4 + x3 + x + 1
 		uint64_t a,b,c,r;
 		a = 0x0102030405060708ULL;
 		b = 0xFEDCBA9876543210ULL;
@@ -3873,7 +4330,7 @@ if (0) {// CRC-8
 		r = gfmul64r_(a, b);
 		printf("r: 0x%016"PRIX64" %s\n", r, r==c? "ok":"fail");
 	}
-	if (0) {
+	if (1) {
 /*  GFMUL128 (a, b) is the multiplication results of a and b, in GF(2^128) 
 	defined by the reduction polynomial g = g(x) = x128 + x7 + x2 + x + 1)
 */
@@ -3891,25 +4348,26 @@ if (0) {// CRC-8
 		printf("r: 0x%016"PRIX64"%016"PRIX64" %s\n", r_[1], r_[0], 
 			(c[0]==r_[0] && c[1]==r_[1])? "ok":"fail");
 		int i;
-		if (0) for(i=0; i< 0x10000; i++){
+		if (1) for(i=0; i< 0x10000; i++){
 //			r0= REFLECT(gfmul128(REFLECT(a),REFLECT(b)));
 			r = gfmul128(a,b);
 			r_= gfmul128_(a,b);
-			printf("r%04X: 0x%016"PRIX64"%016"PRIX64" %s\n",i, r[1], r[0], 
-				(r[0]==r_[0] && r[1]==r_[1])? "ok":"fail");
-			if (!(r[0]==r_[0] && r[1]==r_[1]))
+			if (!(r[0]==r_[0] && r[1]==r_[1])){
+				printf("r%04X: 0x%016"PRIX64"%016"PRIX64" %s\n",i, r[1], r[0], 
+					(r[0]==r_[0] && r[1]==r_[1])? "ok":"fail");
 				break;
+			}
 			//if (i&1)a = r;
 			//else 
 				b = r;
 		}
 	}
-	if (0) {
+	if (1) {
 		poly64x2_t a = {0xb32b6656a05b40b6ULL, 0x952b2a56a5604ac0ULL};
 		poly64x2_t b = {0xffcaff95f830f061ULL, 0xdfa6bf4ded81db03ULL};
 		poly64x2_t c = {0x4fc4802cc3feda60ULL, 0xda53eb0ad2c55bb6ULL};
 		poly64x2_t r0,r,r_;
-		printf("GF(2m) Reflect(A)*Reflect(B) P(x) = 128 + x7 + x2 + x + 1\n");
+		printf("GF(2m) Reflect(A)*Reflect(B) P(x) = x128 + x7 + x2 + x + 1\n");
 		r0= REFLECT(gfmul128(REFLECT(a),REFLECT(b)));
 		r = gfmul128r(a,b);
 		r_= gfmul128r_(a,b);
@@ -3922,15 +4380,17 @@ if (0) {// CRC-8
 		printf("r: 0x%016"PRIX64"%016"PRIX64" %s\n", r_[1], r_[0], 
 			(c[0]==r_[0] && c[1]==r_[1])? "ok":"fail");
 		int i;
-		if (0) for(i=0; i< 0x10000; i++){
+		if (1) for(i=0; i< 0x10000; i++){
 			r0= REFLECT(gfmul128(REFLECT(a),REFLECT(b)));
 			r = gfmul128r(a,b);
 			r_= gfmul128r_(a,b);
-			printf("r%04X: 0x%016"PRIX64"%016"PRIX64" %s %s\n",i, r0[1], r0[0], 
-				(r0[0]==r[0] && r0[1]==r[1])? "ok":"fail", 
-				(r0[0]==r_[0] && r0[1]==r_[1])? "ok":"fail");
-			if (!(r0[0]==r[0] && r0[1]==r[1]) || !(r0[0]==r_[0] && r0[1]==r_[1]))
+			if (!(r0[0]==r[0] && r0[1]==r[1]) || !(r0[0]==r_[0] && r0[1]==r_[1])) {
+				printf("r%04X: 0x%016"PRIX64"%016"PRIX64" %s %s\n",i, r0[1], r0[0], 
+					(r0[0]==r[0] && r0[1]==r[1])? "ok":"fail", 
+					(r0[0]==r_[0] && r0[1]==r_[1])? "ok":"fail");
+
 				break;
+			}
 			if (i&1)a = r;
 			else b = r;
 		}
@@ -3939,3 +4399,4 @@ if (0) {// CRC-8
 	return 0;
 
 }
+#endif
