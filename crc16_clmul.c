@@ -54,7 +54,7 @@ Cortex-A5|A7|A9 поддерживает.
          | результат  | тип | аргументы 
 vmul_p8    poly8x8_t    p8    poly8x8_t  poly8x8_t
 vmulq_p8   poly8x16_t   p8    poly8x16_t poly8x16_t
-vmull_p8   poly8x16_t   p8    poly8x8_t  poly8x8_t
+vmull_p8   poly16x8_t   p8    poly8x8_t  poly8x8_t
 ARMv8.1-M+MVE Helium поддерживает:
 vmull_p8
 vmull_p16
@@ -258,14 +258,29 @@ poly64x2_t gf128_reduction(poly64x2_t r0, poly64x2_t r1)
 	return r0 ^ d;
 #endif
 }
-poly64x2_t gfmul128(poly64x2_t p, poly64x2_t v)
+poly64x2_t gfmul128(poly64x2_t a, poly64x2_t b)
+{
+    poly64x2_t M,L,H;
+    H = CL_MUL128(a, b, 0x11);
+    M = CL_MUL128(a, b, 0x01);
+    M^= CL_MUL128(a, b, 0x10);
+    L = CL_MUL128(a, b, 0x00);
+// редуцирование по модулю, работает!
+	M^= (poly64x2_t){H[1],H[0]};//SHUFFLE(H);
+    M^= CL_MUL128(H, (poly64x2_t){0x86ULL}, 0x01);
+// редуцирование по модулю, работает!
+	L^= (poly64x2_t){M[1],M[0]};//SHUFFLE(M);
+    L^= CL_MUL128(M, (poly64x2_t){0x86ULL}, 0x01);
+    return L;
+}
+poly64x2_t gfmul128_3(poly64x2_t p, poly64x2_t v)
 {
 	poly64x2_t q  = CL_MUL128(p, v, 0x10) 
-	              ^ CL_MUL128(p, v, 0x01);
+				  ^ CL_MUL128(p, v, 0x01);
 	poly64x2_t r0 = CL_MUL128(p, v, 0x00) ^ SLL128U(q, 64);// этот сдвиг можно вынести из цикла
 	poly64x2_t r1 = CL_MUL128(p, v, 0x11) ^ SRL128U(q, 64);// этот сдвиг можно вынести из цикла
-// редуцирование
 #if 1
+// редуцирование
 	const poly64x2_t Px ={0x86ULL};// (1 || 0^120 || x87)
 	poly64x2_t b  = CL_MUL128(r1,Px, 0x01) ^ (poly64x2_t){r1[1],r1[0]};
 	poly64x2_t d  = CL_MUL128( b,Px, 0x01) ^ (poly64x2_t){ b[1], b[0]};
@@ -296,9 +311,37 @@ poly64x2_t gfmul128_(poly64x2_t p, poly64x2_t v) {
 	h = h ^ h<<1 ^ h<<2 ^ h<<7;//SLL64x2(h, d, 1) ^ SLL64x2(h, d, 2)^ SLL64x2(h, d, 7);
 	return (r0 ^ h ^ d);
 }
-
-// Умножение с отражением бит, умножаем на 0xE1 || 0^120 || 1
+static poly64x2_t GF128_shift(poly64x2_t v)
+{
+	// ....
+    return v;
+}
+static poly64x2_t SLM128(poly64x2_t d)
+{
+    poly64x2_t r = {d[1],d[0]};
+    r >>=63;
+    if (r[0]!=0) r[1] ^= 0xc2ULL<<56;
+//	r ^= (r[0]!=0) & (poly64x2_t){1,0xc2ULL<<56};
+    return  (d<<1) ^ r;
+}
 poly64x2_t gfmul128r(poly64x2_t p, poly64x2_t v)
+{
+	const poly64x2_t Px = {0xc2ULL<<56};
+	v = SLM128(v);// сдвиг на один разряд
+    poly64x2_t q  = CL_MUL128(p, v, 0x01)
+				  ^ CL_MUL128(p, v, 0x10);
+    poly64x2_t r0 = CL_MUL128(p, v, 0x00);
+    poly64x2_t r1 = CL_MUL128(p, v, 0x11);
+// редуцирование по модулю, работает!
+	q^= (poly64x2_t){r0[1],r0[0]};//SHUFFLE(L);
+    q^= CL_MUL128(r0, Px, 0x00);
+// редуцирование по модулю, работает! это можно использовать как отдельную функцию
+	r1^= (poly64x2_t){q[1],q[0]};//SHUFFLE(M);
+    r1^= CL_MUL128(q, Px, 0x00);
+    return r1;
+}
+// Умножение с отражением бит, умножаем на 0xE1 || 0^120 || 1
+poly64x2_t gfmul128r_2(poly64x2_t p, poly64x2_t v)
 {
 	poly64x2_t q  = CL_MUL128(p, v, 0x10) 
 	              ^ CL_MUL128(p, v, 0x01);
@@ -379,6 +422,15 @@ uint64_t gfmul64_2(uint64_t a, uint64_t b)
 	}
 	return r;
 }
+// тбалица может использоваться для редуцирования по 4 бита
+const uint8_t gf64_lookup4[] = {
+//GF2m-64
+//POLY=0x1B
+0x00, 0x1B, 0x36, 0x2D,
+0x6C, 0x77, 0x5A, 0x41,
+0xD8, 0xC3, 0xEE, 0xF5,
+0xB4, 0xAF, 0x82, 0x99,
+};
 
 uint64_t gfmul64r(uint64_t a, uint64_t b)
 {
@@ -421,9 +473,10 @@ static const uint8_t CRC8B_Lookup4[] = {
 };
 static uint32_t	CRC8B_update(uint32_t crc, unsigned char val)
 {
-	crc = (crc>>4) ^ CRC8B_Lookup4[(crc ^ (val   )) & 0xF];
-	crc = (crc>>4) ^ CRC8B_Lookup4[(crc ^ (val>>4)) & 0xF];
-	return crc & 0xFF;
+	crc^= val;
+	crc = (crc>>4) ^ CRC8B_Lookup4[(crc) & 0xF];
+	crc = (crc>>4) ^ CRC8B_Lookup4[(crc) & 0xF];
+	return crc;
 }
 uint32_t CRC8B_update_32(uint32_t crc, uint8_t *data){
 	uint32_t val=0;
@@ -496,8 +549,9 @@ static const uint8_t CRC8I_Lookup4[] = {// POLY=0x1D
 0x9C, 0x81, 0xA6, 0xBB,
 };
 uint32_t    CRC8I_update(uint32_t crc, uint8_t val) {
-	crc = (crc << 4) ^ CRC8I_Lookup4[((crc >> 4) ^ (val>>4)) & 0xF ];
-	crc = (crc << 4) ^ CRC8I_Lookup4[((crc >> 4) ^ (val   )) & 0xF ];
+	crc^= val;
+	crc = (crc << 4) ^ CRC8I_Lookup4[(crc&0xFF) >> 4];
+	crc = (crc << 4) ^ CRC8I_Lookup4[(crc&0xFF) >> 4];
 	return crc & 0xFF;
 }
 uint32_t    CRC8I_update_8(uint32_t crc, uint8_t val) {
@@ -624,8 +678,9 @@ static const uint8_t CRC8_Lookup4[] = {
 	0x24, 0x23, 0x2A, 0x2D,
 };
 uint32_t    CRC8_update(uint32_t crc, uint8_t val) {
-	crc = (crc << 4) ^ CRC8_Lookup4[((crc >> 4) ^ (val>>4)) & 0xF ];
-	crc = (crc << 4) ^ CRC8_Lookup4[((crc >> 4) ^ (val   )) & 0xF ];
+	crc^= val;
+	crc = (crc << 4) ^ CRC8_Lookup4[(crc&0xFF) >> 4];
+	crc = (crc << 4) ^ CRC8_Lookup4[(crc&0xFF) >> 4];
 	return crc & 0xFF;
 }
 uint32_t    CRC8_update_8(uint32_t crc, uint8_t val) {
@@ -763,10 +818,11 @@ static const uint16_t CRC16B_Lookup4[16] = {
 0xA001, 0x6C00, 0x7800, 0xB401,
 0x5000, 0x9C01, 0x8801, 0x4400,
 };
-
+#define POLY16B	0x1081
 CRC16	CRC16B_update(CRC16 crc, uint8_t val){
-	crc = ((crc >> 4) ^ (POLY16B* ((crc ^ (val     )) & 0xF)))  & CRC16_MASK;
-	crc = ((crc >> 4) ^ (POLY16B* ((crc ^ (val >> 4)) & 0xF)))  & CRC16_MASK;
+	crc^= val;
+	crc = (crc >> 4) ^ (POLY16B* (crc & 0xF));
+	crc = (crc >> 4) ^ (POLY16B* (crc & 0xF));
 	return crc;
 }
 // Структура коэффициентов 
@@ -1089,14 +1145,16 @@ static const uint16_t CRC16_Lookup4[16] = {
 	0xC18C, 0xD1AD, 0xE1CE, 0xF1EF
 };
 CRC16	CRC16_update(CRC16 crc, unsigned char val){
-	crc = (crc << 4) ^ CRC16_Lookup4[((crc >> 12) ^ (val >> 4)) & 0xF];
-	crc = (crc << 4) ^ CRC16_Lookup4[((crc >> 12) ^ (val     )) & 0xF];
-	return crc & CRC16_MASK ;
+	crc^= (val << 8);
+	crc = (crc << 4) ^ CRC16_Lookup4[(crc >> 12)];
+	crc = (crc << 4) ^ CRC16_Lookup4[(crc >> 12)];
+	return crc;
 }
-CRC32	CRC16_update1(CRC32 crc, unsigned char val){
-	crc = ((crc << 4) ^ (POLY16 * (((crc >> 12) ^ (val >> 4)) & 0xF))) ;
-	crc = ((crc << 4) ^ (POLY16 * (((crc >> 12) ^ (val     )) & 0xF))) ;
-	return crc & CRC16_MASK ;
+CRC16	CRC16_update1(CRC16 crc, unsigned char val){
+	crc^= (val << 8);
+	crc = (crc << 4) ^ (POLY16 * (crc >> 12)) ;
+	crc = (crc << 4) ^ (POLY16 * (crc >> 12)) ;
+	return crc;
 }
 CRC16	CRC16B_update_(CRC16 crc, uint8_t val)
 {
@@ -1117,8 +1175,9 @@ static const uint16_t CRC16M_Lookup4[16] = {
 };
 CRC16	CRC16M_update(CRC16 c, uint8_t v)
 {
-	c = (c>>4) ^ CRC16M_Lookup4[(c ^ (v   )) & 0xF];
-	c = (c>>4) ^ CRC16M_Lookup4[(c ^ (v>>4)) & 0xF];
+	c^= v;
+	c = (c>>4) ^ CRC16M_Lookup4[c & 0xF];
+	c = (c>>4) ^ CRC16M_Lookup4[c & 0xF];
 	return c & CRC16_MASK;
 }
 CRC16 CRC16M_update_8(CRC16 crc, uint8_t *data){
@@ -1361,6 +1420,14 @@ static const CRC32 CRC32_Lookup4[16] = {
 0x2608EDB8, 0x22C9F00F, 0x2F8AD6D6, 0x2B4BCB61,
 0x350C9B64, 0x31CD86D3, 0x3C8EA00A, 0x384FBDBD
 };
+/* Один байт за два шага по таблице 4 бит */
+CRC32 CRC32_update   (CRC32 crc, uint8_t val){
+	crc^= (val <<24);
+	crc = (crc << 4) ^ CRC32_Lookup4[crc >> 28];
+	crc = (crc << 4) ^ CRC32_Lookup4[crc >> 28];
+	return crc;
+}
+
 #define CRC24_CHECK 0x21cf02
 #define CRC24_INIT  0xB704CE
 #define CRC24_POLY  0x864CFB
@@ -1372,16 +1439,11 @@ static const CRC32 CRC24_Lookup4[16] = {
 };
 
 /* Один байт за два шага по таблице 4 бит */
-CRC32 CRC24_update   (CRC32 CRC, uint8_t val){
-	CRC = (CRC << 4) ^ CRC24_Lookup4[((CRC >> 20) ^ (val>>4)) & 0xF ];
-	CRC = (CRC << 4) ^ CRC24_Lookup4[((CRC >> 20) ^ (val   )) & 0xF ];
-	return CRC & 0xFFFFFF;
-}
-/* Один байт за два шага по таблице 4 бит */
-CRC32 CRC32_update   (CRC32 CRC, uint8_t val){
-	CRC = (CRC << 4) ^ CRC32_Lookup4[((CRC >> 28) ^ (val>>4)) & 0xF ];
-	CRC = (CRC << 4) ^ CRC32_Lookup4[((CRC >> 28) ^ (val   )) & 0xF ];
-	return CRC;
+CRC32 CRC24_update   (CRC32 crc, uint8_t val){
+	crc^= (val <<16);
+	crc = (crc << 4) ^ CRC24_Lookup4[(crc >> 20)&0xF];
+	crc = (crc << 4) ^ CRC24_Lookup4[(crc >> 20)&0xF];
+	return crc & 0xFFFFFF;
 }
 
 #define CRC32B_CHECK 0xcbf43926
@@ -1391,10 +1453,11 @@ static const CRC32 CRC32B_Lookup4[16]={
 0xEDB88320, 0xF00F9344, 0xD6D6A3E8, 0xCB61B38C,
 0x9B64C2B0, 0x86D3D2D4, 0xA00AE278, 0xBDBDF21C
 };
-CRC32 CRC32B_update(CRC32 CRC, unsigned char val){
-	CRC = (CRC>>4) ^ CRC32B_Lookup4[(CRC ^ (val   )) & 0xF];
-	CRC = (CRC>>4) ^ CRC32B_Lookup4[(CRC ^ (val>>4)) & 0xF];
-	return CRC;
+CRC32 CRC32B_update(CRC32 crc, unsigned char val){
+	crc^= val;
+	crc = (crc>>4) ^ CRC32B_Lookup4[crc & 0xF];
+	crc = (crc>>4) ^ CRC32B_Lookup4[crc & 0xF];
+	return crc;
 }
 #define POLY32K 0x741B8CD7
 static const CRC32 CRC32K_Lookup4[16] = {
@@ -1403,10 +1466,11 @@ static const CRC32 CRC32K_Lookup4[16] = {
 0xEB31D82E, 0x68FED712, 0x3ACC760B, 0xB9037937,
 0x9EA93439, 0x1D663B05, 0x4F549A1C, 0xCC9B9520,
 };
-CRC32 CRC32K_update   (CRC32 CRC, uint8_t val){
-	CRC = (CRC >> 4) ^ CRC32K_Lookup4[(CRC ^ (val   )) & 0xF ];
-	CRC = (CRC >> 4) ^ CRC32K_Lookup4[(CRC ^ (val>>4)) & 0xF ];
-	return CRC;
+CRC32 CRC32K_update   (CRC32 crc, uint8_t val){
+	crc^= val;
+	crc = (crc >> 4) ^ CRC32K_Lookup4[crc & 0xF ];
+	crc = (crc >> 4) ^ CRC32K_Lookup4[crc & 0xF ];
+	return crc;
 }
 #define POLY32C 0x1EDC6F41
 #define CRC32C_CHECK 0xE3069283
@@ -1421,10 +1485,11 @@ static const CRC32 CRC32C_Lookup4[16] = {
     CRC-32C (Castagnoli) 	iSCSI, SCTP, G.hn payload, SSE4.2, Btrfs, ext4 	0x1EDC6F41 	инверсный полином 0x82F63B78
     \see [RFC 4960] Appendix B. CRC32c Checksum Calculation <http://tools.ietf.org/html/rfc4960#appendix-B>
 */
-CRC32 CRC32C_update(CRC32 CRC, unsigned char val){
-	CRC = (CRC>>4) ^ CRC32C_Lookup4[(CRC ^ (val   )) & 0xF];
-	CRC = (CRC>>4) ^ CRC32C_Lookup4[(CRC ^ (val>>4)) & 0xF];
-	return CRC;
+CRC32 CRC32C_update(CRC32 crc, uint8_t val){
+	crc^= val;
+	crc = (crc>>4) ^ CRC32C_Lookup4[crc & 0xF];
+	crc = (crc>>4) ^ CRC32C_Lookup4[crc & 0xF];
+	return crc;
 }
 // CRC-64/XZ POLY=0xC96C5795D7870F42
 #define CRC64XZ_CHECK 0x995dc9bbdf1939faULL
@@ -1435,8 +1500,9 @@ static const CRC64 CRC64XZ_Lookup4[16] = {
 0xADDA7C5F3C4488E3, 0xD041DD676D77EEAA, 0x56ED3E2F9E224471, 0x2B769F17CF112238,
 };
 CRC64 CRC64XZ_update   (CRC64 crc, uint8_t val){
-	crc = (crc >> 4) ^ CRC64XZ_Lookup4[(crc ^ (val   )) & 0xF ];
-	crc = (crc >> 4) ^ CRC64XZ_Lookup4[(crc ^ (val>>4)) & 0xF ];
+	crc^= val;
+	crc = (crc >> 4) ^ CRC64XZ_Lookup4[crc & 0xF ];
+	crc = (crc >> 4) ^ CRC64XZ_Lookup4[crc & 0xF ];
 	return crc;
 }
 CRC64 CRC64XZ_update_64(CRC64 crc, uint8_t* data){
@@ -1531,9 +1597,67 @@ static const CRC64 CRC64GO_Lookup4[16] = {
 0xB400000000000000, 0xAF00000000000000, 0x8200000000000000, 0x9900000000000000,
 };
 CRC64 CRC64GO_update   (CRC64 crc, uint8_t val){
-	crc = (crc >> 4) ^ CRC64GO_Lookup4[((crc) ^ (val   )) & 0xF ];
-	crc = (crc >> 4) ^ CRC64GO_Lookup4[((crc) ^ (val>>4)) & 0xF ];
+	crc^= val;
+	crc = (crc >> 4) ^ CRC64GO_Lookup4[crc & 0xF];
+	crc = (crc >> 4) ^ CRC64GO_Lookup4[crc & 0xF];
 	return crc;
+}
+#include "gf2m_64.h"
+/*! Операция сдвига в конечном поле с редуцированием */
+uint64_t GF64_shlm   (uint64_t crc){
+	uint8_t cy = crc>>60;
+	crc = (crc<<4) ^ gf2m_64[cy];
+	return crc;
+}
+/*! Умножение 64х8 по одному биту */
+uint64_t GF64_mul_ui (uint64_t a, uint8_t b) {
+	int i;
+	uint64_t r=0;
+	for(i=0; i<8; i++){
+		if (r&(1ULL<<63)) {
+			r = (r<<1) ^ 0x1BULL;
+		} else
+			r = (r<<1);
+		if (b&0x80){
+			r ^=a;
+		}
+		b<<=1;
+	}
+	return r;
+}
+/*! \brief Умножение 64х8 по четыре бита без редуцирования 
+	\param[IN] a - таблица умножения, 16 элементов
+ */
+static inline uint64_t GF64_mul2_ui (const uint64_t* a, uint8_t b, uint8_t *cy) {
+	uint64_t r = a[b>>4];
+	*cy ^= r>>60;
+	r = (r<<4)^a[b&0xF];
+	return r;
+}
+/*! \brief Умножение 64х64 в поле GF(2^64) с полиномом по четыре бита без редуцирования */
+uint64_t GF64_mulm   (uint64_t a, uint64_t b)
+{
+	const uint64_t P = 0x1BULL;
+	int i,n;
+	uint64_t aa[16];// 128 байт
+	// расчитать таблицу умножения для 16 значений
+	for (n=0; n<16;n++) aa[n] = 0;
+	for (i=0; i<4; i++){
+		for (n=0; n<16; n++)
+			if (n & (1<<i)) aa[n] ^= a;
+		if (a&(1ULL<<63))
+			a = (a<<1) ^ P;
+		else
+			a = (a<<1);
+	}
+	uint64_t r = 0;
+	for (i=15; i>=0; i--){
+		uint8_t cy = r>>60;
+		r = (r<<4);
+		r^= aa[(b>>(4*i))&0xF];
+		r^= gf2m_64[cy];// редуцирование
+	}
+	return r;
 }
 
 #define CRC64WE_POLY  0x42F0E1EBA9EA3693ULL
@@ -1545,8 +1669,9 @@ static const CRC64 CRC64WE_Lookup4[16] = {
 0xDB55AACF12C73561, 0x99A54B24BB2D03F2, 0x5EB4691841135847, 0x1C4488F3E8F96ED4,
 };
 CRC64 CRC64WE_update   (CRC64 crc, uint8_t val){
-	crc = (crc << 4) ^ CRC64WE_Lookup4[((crc>>60) ^ (val>>4)) & 0xF ];
-	crc = (crc << 4) ^ CRC64WE_Lookup4[((crc>>60) ^ (val   )) & 0xF ];
+	crc^= ((uint64_t)val <<56);
+	crc = (crc << 4) ^ CRC64WE_Lookup4[crc>>60];
+	crc = (crc << 4) ^ CRC64WE_Lookup4[crc>>60];
 	return crc;
 }
 CRC64 CRC64WE_update_8 (CRC64 crc, uint8_t* data){
@@ -2578,7 +2703,6 @@ uint64_t barret_calc(uint64_t poly, int bits)
 	if (r) v|=1;
 	return v;
 }
-
 static
 uint64_t xt_mod_P_neg(uint64_t poly, int t, int bits){
 	uint64_t v=0;
@@ -2863,7 +2987,7 @@ if (0) {
 	printf("\n");
 }
 char test[] = "123456789";
-if (1) {// CRC-32
+if (0) {// CRC-32
 #define CRC32_POLY 0x04C11DB7
 #define CRC32_INIT 0xFFFFFFFF
 #define CRC32_XOUT 0xFFFFFFFF
@@ -3036,7 +3160,7 @@ crc64_gen(CRC32_POLY, 32);
 */
 	
 }
-if (0) {// CRC-32B
+if (1) {// CRC-32B
 	uint32_t crc;
 	printf("CRC-32B %08llX\n", bit_reflect(0x04C11DB7ULL<<32));
 	crc_gen_inv_table(bit_reflect(0x04C11DB7ULL<<32), 32);//CRC32/ZIP
@@ -3055,6 +3179,18 @@ if (0) {// CRC-32B
 	printf("K4(159) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
 	k = xt_mod_P_ref(0x1DB710641>>1,192-1, 32);
 	printf("K3(191) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
+	k = xt_mod_P_ref(0x1DB710641>>1,256-32-1, 32);
+	printf("K3(223) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
+	k = xt_mod_P_ref(0x1DB710641>>1,256+32-1, 32);
+	printf("K3(287) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
+	k = xt_mod_P_ref(0x1DB710641>>1,384-32-1, 32);
+	printf("K3(351) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
+	k = xt_mod_P_ref(0x1DB710641>>1,384+32-1, 32);
+	printf("K3(415) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
+	k = xt_mod_P_ref(0x1DB710641>>1,512-32-1, 32);
+	printf("K3(479) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
+	k = xt_mod_P_ref(0x1DB710641>>1,512+32-1, 32);
+	printf("K3(543) = %08llX (%08llX)\n", k, bit_reflect(k<<32));
 
 
 	crc64b_gen(0x1DB710641>>1, 32);
@@ -3120,7 +3256,7 @@ if (0) {// CRC-32B
 	crc = CRC32B_update_N(crc, &data[0], len);
 	printf("CRC32B = %08X (xN) \n", crc ^ 0xFFFFFFFF);
 }
-if (0) {// CRC-32C
+if (1) {// CRC-32C
 	#define CRC32C_INIT 0xFFFFFFFF
 	#define CRC32C_XOUT 0xFFFFFFFF
 //	barrett_k_ref(bit_reflect(0x04C11DB7ULL<<32), 32);
@@ -3237,7 +3373,7 @@ if (0) {// CRC-32C
 	printf("CRC-32C = ok\n\n");
 
 }
-if (0) {// CRC-32K/Koopman
+if (1) {// CRC-32K/Koopman
 
 	printf("CRC-32K/BACnet (Koopman)\n"); 
 	crc_gen_inv_table(bit_reflect(0x741B8CD7ULL<<32),32);
@@ -3391,7 +3527,7 @@ if (0) {// CRC-32K/Koopman
 
 }
 	len=96;
-if (1) {// CRC-24/OpenPGP
+if (0) {// CRC-24/OpenPGP
 	printf("CRC-24/OpenPGP\n"); 
 	crc_gen_table(CRC24_POLY, 24,16);//CRC32
 	CRC32 crc24 = CRC24_INIT;
@@ -3606,7 +3742,7 @@ if (0) {// CRC-16/MODBUS poly=0x8005 init=0xffff refin=true refout=true xorout=0
 	
 	
 }
-if (1) {// poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x906e
+if (0) {// poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x906e
 #define CRC16B_INIT 0xFFFF
 #define CRC16B_POLY 0x1021
 #define CRC16B_XOUT 0xFFFF
@@ -3690,7 +3826,7 @@ if (1) {// poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x
 	printf("CRC-16B = ok\n\n");
 	
 }
-if (1) {// CRC-16
+if (0) {// CRC-16
 	printf("CRC-16\n");
 #define CRC16_INIT 0xFFFF
 #define CRC16_POLY 0x1021
@@ -3833,7 +3969,8 @@ crc64_gen(CRC16_POLY, 16);
 // расчет таблиц
 
 if (0) {// GF2m-64
-	printf("GF2m-64\n"); crc_gen_table(0x1BULL, 64, 16);
+//	printf("GF2m-64\n"); crc_gen_table(0x1BULL, 64, 16);
+//	printf("GF2m-128\n"); crc_gen_table(0x87ULL, 16, 16);
 	
 	barrett_k64(0x1BULL, 64);
 	printf("CRC-64/GO-ISO\n");
@@ -3846,8 +3983,8 @@ if (0) {// GF2m-64
 	printf("Test =%0llX ..%s\n", crc64^~0ULL, (crc64^~0ULL)==CRC64GO_CHECK?"ok":"fail");
 
 }
-if (0) {// CRC-64/XZ
-	printf("CRC-64/XZ\n"); crc_gen_inv_table(bit_reflect(0x42F0E1EBA9EA3693ULL), 64);//CRC32
+if (1) {// CRC-64/XZ
+	printf("CRC-64/XZ\n"); crc_gen_inv_table(bit_reflect(0x42F0E1EBA9EA3693ULL), 64);
 	CRC64 crc64 = ~0ULL;
 	for(i=0; i<9; i++){
 		crc64 = CRC64XZ_update(crc64, test[i]);
@@ -3860,7 +3997,11 @@ if (0) {// CRC-64/XZ
 	k = xt_mod_P_ref(0xC96C5795D7870F42ULL,128-1, 64);
 	printf("K4(127) = %016llX \n", k);
 	k = xt_mod_P_ref(0xC96C5795D7870F42ULL,192-1, 64);
-	printf("K4(191) = %016llX \n", k);
+	printf("K3(191) = %016llX \n", k);
+	k = xt_mod_P_ref(0xC96C5795D7870F42ULL,256-1, 64);
+	printf("F2(255) = %016llX \n", k);
+	k = xt_mod_P_ref(0xC96C5795D7870F42ULL,320-1, 64);
+	printf("F2(319) = %016llX \n", k);
 
 	for(i=0; i<16;i++){
 		k = xt_mod_P_ref(0xC96C5795D7870F42ULL, 8*i+7, 64);
@@ -3909,7 +4050,7 @@ if (0) {// CRC-64/XZ
 
 
 }
-if (0) {// CRC-64/WE
+if (1) {// CRC-64/WE
 	printf("CRC-64/WE\n"); crc_gen_table(0x42F0E1EBA9EA3693ULL, 64,16);//CRC32
 	CRC64 crc64 = ~0ULL;
 	for(i=0; i<9; i++){
@@ -4185,7 +4326,7 @@ if (0) {// CRC-8/BAC
 
 	
 }
-if (1) {// CRC-8/SMBus
+if (0) {// CRC-8/SMBus
 	printf("CRC-8/SMBus\n");//  poly=0x07 init=0x00 refin=false refout=false xorout=0x00 check=0xf4
 #define CRC8_INIT 0x00
 #define CRC8_POLY 0x07
@@ -4208,12 +4349,14 @@ crc64_gen(CRC8_POLY, 8);
 	crc = CRC8_INIT;
 	crc = CRC8_update_128(crc, &test[0], 9);
 	printf("Check =%0X (x128) ..%s\n", crc^CRC8_XOUT, (crc^CRC8_XOUT)==CRC8_CHECK?"ok":"fail");
-
+uint64_t ts;
+	ts = __builtin_ia32_rdtsc();
 	crc	= CRC8_INIT;
 	for (i=0; i< len; i+=1){
 		crc = CRC8_update(crc, data[i]);
 	}
-	printf("CRC8 = %02X \n", crc ^ CRC8_XOUT);
+	ts-= __builtin_ia32_rdtsc();
+	printf("CRC8 = %02X %"PRId64" clk\n", crc ^ CRC8_XOUT, -ts);
 
 	crc	= CRC8_INIT;
 	for (i=0; i< len; i+=1){
@@ -4260,7 +4403,7 @@ crc64_gen(CRC8_POLY, 8);
 	crc	= CRC8_INIT;
 	crc = CRC8_update_128(crc, &data[0], len);
 	printf("CRC8 = %02X (xN)\n", crc ^ CRC8_XOUT);
-uint64_t ts;
+
 CRC64 crc64;
 	ts = __builtin_ia32_rdtsc();
 	crc64 = (uint64_t)CRC8_INIT<<(64-8);
@@ -4289,10 +4432,37 @@ CRC64 crc64;
 //	printf("Modbus\n"); crc_gen_inv_table(0xA001,16);//modbus
 //	printf("CRC-16/X-25 BACnet\n"); crc_gen_inv_table(bit_reflect(0x1021ULL<<48),16);
 	//printf("CRC-8 BACnet: "); crc_gen_inv_table(0x81,8);
-	// операция умножения без переноса
-	uint64_t u = barret_calc(0x1C3, 8);
+	// операция умножения без переноса для Кузнечика
+//	gfmul8_C3()
+	uint64_t u;
+	printf("AES GF(2^8)\n");
+	u = barret_calc(0x11B, 8);
+	crc_gen_table(0x1B, 8,16);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x11B\n", 8, 2, u);
+	u = barret_calc(0x11D, 8);
+	crc_gen_table(0x1D, 8,16);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x11D\n", 8, 2, u);
+	u = barret_calc(0x12B, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x12B\n", 8, 2, u);
+	u = barret_calc(0x12D, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x12D\n", 8, 2, u);
+	u = barret_calc(0x165, 8);
+//	crc_gen_table(0x65, 8,16);
+	u = barret_calc(0x171, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x171\n", 8, 2, u);
+	u = barret_calc(0x187, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x187\n", 8, 2, u);
+	u = barret_calc(0x18D, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x18D\n", 8, 2, u);
+	u = barret_calc(0x1C3, 8);
 	crc_gen_table(0xC3, 8,16);
-	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x1C3\n", 16, 2, u);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x1C3\n", 8, 2, u);
+	u = barret_calc(0x1CF, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x1CF\n", 8, 2, u);
+	u = barret_calc(0x1E7, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x1E7\n", 8, 2, u);
+	u = barret_calc(0x1F5, 8);
+	printf("Barrett u = x^%d/P(x) U =0x1%0*llX P =0x1F5\n", 8, 2, u);
 	
 	printf("GF2m-64\n");
 	uint64_t a, b, r, r_, r2;
@@ -4312,11 +4482,16 @@ CRC64 crc64;
 	r_= gfmul64_(a, b);
 	r2= gfmul64_2(a, b);
 	printf("r: 0x%016"PRIX64" %s %s\n", r, r==r_? "ok":"fail", r==r2? "ok":"fail");
+	r2 = GF64_mulm(a,b);
+	printf("r: 0x%016"PRIX64" %s \n", r, r==r2? "ok":"fail");
+	
 	a = 0xFEDCBA9876543210ULL;
 	r = gfmul64(a, b);
 	r_= gfmul64_(a, b);
 	r2= gfmul64_2(a, b);
 	printf("r: 0x%016"PRIX64" %s %s\n", r, r==r_? "ok":"fail", r==r2? "ok":"fail");
+	r2 = GF64_mulm(a,b);
+	printf("r: 0x%016"PRIX64" %s \n", r, r==r2? "ok":"fail");
 	if (1) {//GF(2m) Reflect P(x) = x64 + x4 + x3 + x + 1
 		uint64_t a,b,c,r;
 		a = 0x0102030405060708ULL;
@@ -4324,6 +4499,10 @@ CRC64 crc64;
 		c = 0xE49212E923C485BBULL;
 		r = REFLECT64(gfmul64(REFLECT64(a), REFLECT64(b)));
 		printf("GF(2m) Reflect P(x) = x64 + x4 + x3 + x + 1\n");
+		//crc_gen_inv_table(bit_reflect(0x1BULL), 64);// POLY=0xD800000000000000
+		crc_gen_inv_table(0xD8, 8);
+		
+		
 		printf("r: 0x%016"PRIX64" %s\n", r, r==c? "ok":"fail");
 		r = gfmul64r(a, b);
 		printf("r: 0x%016"PRIX64" %s\n", r, r==c? "ok":"fail");
